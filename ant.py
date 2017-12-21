@@ -24,6 +24,11 @@ class ant:
 		parts[1].setConstraint(((parts[0].getRotation() - 90) % 360, (parts[0].getRotation() + 90) % 360))
 		parts[2].setConstraint(((parts[1].getRotation() - 90) % 360, (parts[1].getRotation() + 90) % 360))
 
+		# Body parts and heads weight
+		parts[0].setWeight(11.72)
+		parts[1].setWeight(11.72)
+		parts[2].setWeight(8.24)
+
 		# Add the leg parts
 		parts.append(part(310, 0, 0))
 		parts.append(part(50, 0, 0))
@@ -37,6 +42,8 @@ class ant:
 			parts[i + 3].loadImage("image_resources/leg.png")
 			parts[i].setConstraint((0, 360))
 			parts[i + 3].setConstraint(((parts[i].getRotation() - 90) % 360, (parts[i].getRotation() + 90) % 360))
+			parts[i].setWeight(0.66)
+			parts[i + 3].setWeight(0.66)
 
 		for j in range(0,9):
 			backup.append(part(0, 0, 0))
@@ -47,9 +54,11 @@ class ant:
 
 
 	# Handles movement calculations
-	def move(self, xy, movement, rotate):
+	def move(self, xy, movement):
 		parts = self.parts
 		colliding = self.colliding
+		self.box = [(-1,-1), (-1,-1), (-1,-1), (-1,-1)]
+
 		for g in range(0,9):
 			colliding[g] = False
 		pos = parts[0].getPosition()
@@ -65,16 +74,12 @@ class ant:
 			if self.collide():
 				self.stored(False)
 		#gravity
-		#pivot = (pivot[0], pivot[1] + 1.0)
-		#self.stored(True)
-		#self.setPositions(pivot)
-		#if self.collide():
-		#	self.stored(False)
-		#	pivot = (pivot[0], pivot[1] - 1.0)
-		if rotate == 1:
-			self.rotateAll(True)
-		elif rotate == -1:
-			self.rotateAll(False)
+		pivot = (pivot[0], pivot[1] + 1.0)
+		self.stored(True)
+		self.setPositions(pivot)
+		if self.collide():
+			self.stored(False)
+			pivot = (pivot[0], pivot[1] - 1.0)
 		for q in range(6,9):
 			if colliding[q]:
 				p = q - 3
@@ -109,7 +114,37 @@ class ant:
 					if self.collide() and newAngle[1] > 0:
 						self.stored(False)
 
-		return self.centerOfGravity()
+
+		self.centerOfGravity()
+		if self.box[0][0] != -1 and self.box[0][0] > self.cog[0]:
+			d = (self.box[0][0] - self.cog[0], self.box[0][1] - self.cog[1])
+			distance = math.sqrt(d[0] * d[0] + d[1] * d[1])
+
+			angle = (math.sin((parts[0].getRotation()) / 180 * math.pi)), -math.cos((180.0 + parts[0].getRotation()) / 180 * math.pi)
+			angle = (angle[0] * distance, angle[1] * distance)
+
+			newAngle = (-math.sin((parts[0].getRotation() + 1) / 180 * math.pi)), math.cos((180.0 + parts[0].getRotation() + 1) / 180 * math.pi)
+			
+			newAngle = (newAngle[0] * distance + angle[0], newAngle[1] * distance + angle[1] - 0.05)
+			pivot = (pivot[0] + newAngle[0], pivot[1] + newAngle[1])
+			self.setPositions(pivot)
+
+			self.rotateAll(True)
+		elif self.box[1][0] != -1 and self.box[1][0] < self.cog[0]:
+			d = (self.box[1][0] - self.cog[0], self.box[1][1] - self.cog[1])
+			distance = math.sqrt(d[0] * d[0] + d[1] * d[1])
+
+			angle = (math.sin((parts[0].getRotation()) / 180 * math.pi)), -math.cos((180.0 + parts[0].getRotation()) / 180 * math.pi)
+			angle = (angle[0] * distance, angle[1] * distance)
+
+			newAngle = (-math.sin((parts[0].getRotation() - 1) / 180 * math.pi)), math.cos((180.0 + parts[0].getRotation() + 1) / 180 * math.pi)
+			
+			newAngle = (newAngle[0] * distance + angle[0], newAngle[1] * distance + angle[1] - 0.05)
+			pivot = (pivot[0] + newAngle[0], pivot[1] + newAngle[1])
+			self.setPositions(pivot)
+			self.rotateAll(False)
+		print(self.box)
+		print(self.cog)
 
 
 	def centerOfGravity(self):
@@ -131,11 +166,17 @@ class ant:
 		centers.append((pos[0] + (partRotations[0][0] * 39.0) + (partRotations[1][0] * 39.0) + (partRotations[2][0] * 9.0) + 50, pos[1] + (partRotations[0][1] * 39.0) + (partRotations[1][1] * 39.0) + (partRotations[2][1] * 9.0) + 50))
 		centers.append((pos[0] + 38 + (partRotations[0][0] * 12) + (partRotations[3][0] * 5) + 13, pos[1] + 40 + (partRotations[0][1] * 12) + (partRotations[3][1] * 5) + 13))
 		centers.append((pos[0] + 38 + (partRotations[0][0] * 39) + (partRotations[4][0] * 5) + 13, pos[1] + 40 + (partRotations[0][1] * 39) + (partRotations[4][1] * 5) + 13))
-		centers.append((pos[0] + 38 + (partRotations[0][0] * 39) + (partRotations[0][0] * 25.0) + (partRotations[5][0] * 5) + 13, pos[1] + 40 + (partRotations[0][1] * 39) + (partRotations[0][1] * 25.0) + (partRotations[4][1] * 5) + 13))
+		centers.append((pos[0] + 38 + (partRotations[0][0] * 39) + (partRotations[1][0] * 25.0) + (partRotations[5][0] * 5) + 13, pos[1] + 40 + (partRotations[0][1] * 39) + (partRotations[1][1] * 25.0) + (partRotations[5][1] * 5) + 13))
 		centers.append((pos[0] + 38 + (partRotations[0][0] * 12) + (partRotations[3][0] * 12) + (partRotations[6][0] * 5) + 13, pos[1] + 40 + (partRotations[0][1] * 12) + (partRotations[3][1] * 12) + (partRotations[6][1] * 5) + 13))
 		centers.append((pos[0] + 38 + (partRotations[0][0] * 39) + (partRotations[4][0] * 12) + (partRotations[7][0] * 5) + 13, pos[1] + 40 + (partRotations[0][1] * 39) + (partRotations[4][1] * 12) + (partRotations[7][1] * 5) + 13))
-		centers.append((pos[0] + 38 + (partRotations[0][0] * 39) + (partRotations[0][0] * 25.0) + (partRotations[5][0] * 12) + (partRotations[8][0] * 5) + 13, pos[1] + 40 + (partRotations[0][1] * 39) + (partRotations[0][1] * 25.0) + (partRotations[4][1] * 12) + (partRotations[8][1] * 5) + 13))
-		return centers
+		centers.append((pos[0] + 38 + (partRotations[0][0] * 39) + (partRotations[1][0] * 25.0) + (partRotations[5][0] * 12) + (partRotations[8][0] * 5) + 13, pos[1] + 40 + (partRotations[0][1] * 39) + (partRotations[1][1] * 25.0) + (partRotations[5][1] * 12) + (partRotations[8][1] * 5) + 13))
+		
+		self.cog = (0,0)
+		weight = 0
+		for i in range(0,9):
+			self.cog = (self.cog[0] + (centers[i][0] * parts[i].getWeight()), self.cog[1] + (centers[i][1] * parts[i].getWeight()))
+			weight += parts[i].getWeight()
+		self.cog = (self.cog[0] / weight, self.cog[1] / weight)
 
 	def stored(self, setup):
 		one = []
@@ -153,13 +194,11 @@ class ant:
 
 	def rotateAll(self, left):
 
-		#for k in range(0,9):
-		if left:
-			self.parts[3].setRotation(0)
-			#self.parts[k].rotation(1)
-		else:
-			self.parts[3].setRotation(90)
-			#self.parts[k].rotation(-1)
+		for k in range(0,9):
+			if left:
+				self.parts[k].rotation(1)
+			else:
+				self.parts[k].rotation(-1)
 		
 	def setConstraints(self):
 		parts = self.parts
@@ -195,6 +234,7 @@ class ant:
 	def collide(self):
 		parts = self.parts
 		colliding = self.colliding
+		ret = False
 		# For legs check if they are colliding with other legs from the same ant. Body parts are behind the legs so they can overlap
 		# But an agent cannot cross its legs
 		for position in range(0,9):
@@ -206,18 +246,30 @@ class ant:
 						result = self.parts[j].getMask().overlap(self.parts[position].getMask(), offset)
 						# If they collide return true
 						if result:
+							self.gravityBox((self.parts[position].getPosition()[0] + result[0], self.parts[position].getPosition()[1] + result[1]))
 							colliding[position] = True
-							return True
+							ret = True
 
 			# Check collisions against all the other objects in the world which exclude itself
 			for k in range(len(self.objects)):
 				offset = (int(self.objects[k][1] - parts[position].getPosition()[0]), int(self.objects[k][2] - parts[position].getPosition()[1]))
 				result =  self.parts[position].getMask().overlap(self.objects[k][0], offset)
 				if result:
+					self.gravityBox((self.parts[position].getPosition()[0] + result[0], self.parts[position].getPosition()[1] + result[1]))
 					colliding[position] = True
-					return True
+					ret = True
 
-		return False
+		return ret
+
+	def gravityBox(self, point):
+		if self.box[0][0] == -1 or point[0] < self.box[0][0]:
+			self.box[0] = point
+		if self.box[1][0] == -1 or (point[0] > self.box[1][0] and self.box[1][0] != -1):
+			self.box[1] = point
+		if self.box[2][1] == -1 or point[1] < self.box[2][1]:
+			self.box[2] = point
+		if self.box[3][1] == -1 or (point[1] > self.box[3][1] and self.box[3][1] != -1):
+			self.box[3] = point
 
 	def addObject(self, obj):
 		self.objects.append(obj)

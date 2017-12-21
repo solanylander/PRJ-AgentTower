@@ -42,6 +42,14 @@ class part:
 	def getConstraint(self):
 		return self.constraint
 
+	# Set parts constraint
+	def setWeight(self, weight):
+		self.weight = weight
+
+	# Get parts weight 
+	def getWeight(self):
+		return self.weight
+
 	# Rotate the body part by the value of amount with consideration to the body parts constraints
 	def rotation(self, amount):
 		l, u, r = self.constraint[0], self.constraint[1], self.rotate
