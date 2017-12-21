@@ -45,12 +45,9 @@ class ant:
 		# Backup objects that can be used to revert object overlaps and handle collisions
 		self.objects = []
 
-	# Return an array of all the individual ant parts
-	def getParts(self):
-		return self.parts
 
 	# Handles movement calculations
-	def move(self, xy, movement):
+	def move(self, xy, movement, rotate):
 		parts = self.parts
 		colliding = self.colliding
 		for g in range(0,9):
@@ -67,20 +64,78 @@ class ant:
 
 			if self.collide():
 				self.stored(False)
-
-		angle = (parts[6].getRotation() + movement[6] / 180 * math.pi * 12), -math.cos((180.0 + parts[6].getRotation() + movement[6]) / 180 * math.pi * 12)
-		print(angle)
-		point = (parts[6].getPosition()[0] + 12 + angle[0], parts[6].getPosition()[1] + 12 + angle[1])
-		return point
-		for k in range(6,9):
-			if colliding[k]:
-				print("colliding")
 		#gravity
 		#pivot = (pivot[0], pivot[1] + 1.0)
 		#self.stored(True)
 		#self.setPositions(pivot)
 		#if self.collide():
 		#	self.stored(False)
+		#	pivot = (pivot[0], pivot[1] - 1.0)
+		if rotate == 1:
+			self.rotateAll(True)
+		elif rotate == -1:
+			self.rotateAll(False)
+		for q in range(6,9):
+			if colliding[q]:
+				p = q - 3
+				if movement[q] != 0:
+					angle = (math.sin((parts[q].getRotation()) / 180 * math.pi)), -math.cos((180.0 + parts[q].getRotation()) / 180 * math.pi)
+					angle = (angle[0] * 12, angle[1] * 12)
+
+					newAngle = (-math.sin((parts[q].getRotation() + movement[q]) / 180 * math.pi)), math.cos((180.0 + parts[q].getRotation() + movement[q]) / 180 * math.pi)
+					
+					newAngle = (newAngle[0] * 12 + angle[0], newAngle[1] * 12 + angle[1] - 0.05)
+					pivot = (pivot[0] + newAngle[0], pivot[1] + newAngle[1])
+
+
+					self.stored(True)
+					parts[q].setRotation(parts[q].getRotation() + movement[q])
+					self.setPositions(pivot)
+					if self.collide() and newAngle[1] > 0:
+						self.stored(False)
+				if movement[p] != 0:
+					angle = (math.sin((parts[p].getRotation()) / 180 * math.pi)), -math.cos((180.0 + parts[p].getRotation()) / 180 * math.pi)
+					angle = (angle[0] * 12, angle[1] * 12)
+
+					newAngle = (-math.sin((parts[p].getRotation() + movement[p]) / 180 * math.pi)), math.cos((180.0 + parts[p].getRotation() + movement[p]) / 180 * math.pi)
+					
+					newAngle = (newAngle[0] * 12 + angle[0], newAngle[1] * 12 + angle[1] - 0.05)
+					pivot = (pivot[0] + newAngle[0], pivot[1] + newAngle[1])
+
+
+					self.stored(True)
+					parts[p].setRotation(parts[p].getRotation() + movement[p])
+					self.setPositions(pivot)
+					if self.collide() and newAngle[1] > 0:
+						self.stored(False)
+
+		return self.centerOfGravity()
+
+
+	def centerOfGravity(self):
+		centers = []
+		parts = self.parts
+		pos = parts[0].getPosition()
+		partRotations = []
+		for q in range(0,9):
+			if q < 3:
+				partRotations.append((math.cos(parts[q].getRotation() / 180 * math.pi), math.sin((180.0 + parts[q].getRotation()) / 180 * math.pi)))
+			else:
+				partRotations.append((math.cos((parts[q].getRotation() - 90) / 180 * math.pi), math.sin((180.0 + (parts[q].getRotation() - 90)) / 180 * math.pi)))
+
+		# Find the center points of each part
+		# Calculated by finding the connecting part to the body which is the center point (find top left of image then add half the image width)
+		# then calculate the parts rotation and multiply it by the number of pixels away the center of the part is from the images center
+		centers.append((pos[0] + (partRotations[0][0] * 17.0) + 50, pos[1] + (partRotations[0][1] * 17.0) + 50))
+		centers.append((pos[0] + (partRotations[0][0] * 39.0) + (partRotations[1][0] * 17.0) + 50, pos[1] + (partRotations[0][1] * 39.0) + (partRotations[1][1] * 17.0) + 50))
+		centers.append((pos[0] + (partRotations[0][0] * 39.0) + (partRotations[1][0] * 39.0) + (partRotations[2][0] * 9.0) + 50, pos[1] + (partRotations[0][1] * 39.0) + (partRotations[1][1] * 39.0) + (partRotations[2][1] * 9.0) + 50))
+		centers.append((pos[0] + 38 + (partRotations[0][0] * 12) + (partRotations[3][0] * 5) + 13, pos[1] + 40 + (partRotations[0][1] * 12) + (partRotations[3][1] * 5) + 13))
+		centers.append((pos[0] + 38 + (partRotations[0][0] * 39) + (partRotations[4][0] * 5) + 13, pos[1] + 40 + (partRotations[0][1] * 39) + (partRotations[4][1] * 5) + 13))
+		centers.append((pos[0] + 38 + (partRotations[0][0] * 39) + (partRotations[0][0] * 25.0) + (partRotations[5][0] * 5) + 13, pos[1] + 40 + (partRotations[0][1] * 39) + (partRotations[0][1] * 25.0) + (partRotations[4][1] * 5) + 13))
+		centers.append((pos[0] + 38 + (partRotations[0][0] * 12) + (partRotations[3][0] * 12) + (partRotations[6][0] * 5) + 13, pos[1] + 40 + (partRotations[0][1] * 12) + (partRotations[3][1] * 12) + (partRotations[6][1] * 5) + 13))
+		centers.append((pos[0] + 38 + (partRotations[0][0] * 39) + (partRotations[4][0] * 12) + (partRotations[7][0] * 5) + 13, pos[1] + 40 + (partRotations[0][1] * 39) + (partRotations[4][1] * 12) + (partRotations[7][1] * 5) + 13))
+		centers.append((pos[0] + 38 + (partRotations[0][0] * 39) + (partRotations[0][0] * 25.0) + (partRotations[5][0] * 12) + (partRotations[8][0] * 5) + 13, pos[1] + 40 + (partRotations[0][1] * 39) + (partRotations[0][1] * 25.0) + (partRotations[4][1] * 12) + (partRotations[8][1] * 5) + 13))
+		return centers
 
 	def stored(self, setup):
 		one = []
@@ -91,11 +146,20 @@ class ant:
 		else:
 			two = self.backup
 			one = self.parts
-
 		for k in range(0,9):
 			one[k].setPosition(two[k].getPosition())
 			one[k].setConstraint(two[k].getConstraint())
 			one[k].setRotation(two[k].getRotation())
+
+	def rotateAll(self, left):
+
+		#for k in range(0,9):
+		if left:
+			self.parts[3].setRotation(0)
+			#self.parts[k].rotation(1)
+		else:
+			self.parts[3].setRotation(90)
+			#self.parts[k].rotation(-1)
 		
 	def setConstraints(self):
 		parts = self.parts
@@ -126,34 +190,6 @@ class ant:
 		parts[5].setPosition((pos[0] + 38 + (backRotation[0] * 39) + (frontRotation[0] * 25.0), pos[1] + 40 + (backRotation[1] * 39) + (frontRotation[1] * 25.0)))
 		legRotation = (math.sin(parts[5].getRotation() / 180 * math.pi), -math.cos((180.0 + parts[5].getRotation()) / 180 * math.pi))
 		parts[8].setPosition((pos[0] + 38 + (backRotation[0] * 39) + (legRotation[0] * 11.5) + (frontRotation[0] * 25.0), pos[1] + 40 + (backRotation[1] * 39)  + (legRotation[1] * 11.5)+ (frontRotation[1] * 25.0)))
-					
-	def checkPositions(self, xy):
-		parts = self.parts
-		pos = parts[0].getPosition()
-		backRotation = (math.cos(parts[0].getRotation() / 180 * math.pi), math.sin((180.0 + parts[0].getRotation()) / 180 * math.pi))
-		frontRotation = (math.cos(parts[1].getRotation() / 180 * math.pi), math.sin((180.0 + parts[1].getRotation()) / 180 * math.pi))
-		if (pos[0] + xy[0], pos[1] + xy[1]) != parts[0].getPosition():
-			return False
-		if (pos[0] + (backRotation[0] * 39.0), pos[1] + (backRotation[1] * 39.0)) != parts[1].getPosition():
-			return False
-		if (pos[0] + (backRotation[0] * 39.0) + (frontRotation[0] * 39.0), pos[1] + (backRotation[1] * 39.0) + (frontRotation[1] * 39.0)) != parts[2].getPosition():
-			return False
-		if (pos[0] + 38 + (backRotation[0] * 12), pos[1] + 40 + (backRotation[1] * 12)) != parts[3].getPosition():
-			return False
-		legRotation = (math.sin(parts[3].getRotation() / 180 * math.pi), -math.cos((180.0 + parts[3].getRotation()) / 180 * math.pi))
-		if (pos[0] + 38 + (backRotation[0] * 12) + (legRotation[0] * 11.5), pos[1] + 40 + (backRotation[1] * 12) + (legRotation[1] * 11.5)) != parts[6].getPosition():
-			return False
-		if (pos[0] + 38 + (backRotation[0] * 39), pos[1] + 40 + (backRotation[1] * 39)) != parts[4].getPosition():
-			return False
-		legRotation = (math.sin(parts[4].getRotation() / 180 * math.pi), -math.cos((180.0 + parts[4].getRotation()) / 180 * math.pi))
-		if (pos[0] + 38 + (backRotation[0] * 39) + (legRotation[0] * 11.5), pos[1] + 40 + (backRotation[1] * 39) + (legRotation[1] * 11.5)) != parts[7].getPosition():
-			return False
-		if (pos[0] + 38 + (backRotation[0] * 39) + (frontRotation[0] * 25.0), pos[1] + 40 + (backRotation[1] * 39) + (frontRotation[1] * 25.0)) != parts[5].getPosition():
-			return False
-		legRotation = (math.sin(parts[5].getRotation() / 180 * math.pi), -math.cos((180.0 + parts[5].getRotation()) / 180 * math.pi))
-		if (pos[0] + 38 + (backRotation[0] * 39) + (legRotation[0] * 11.5) + (frontRotation[0] * 25.0), pos[1] + 40 + (backRotation[1] * 39)  + (legRotation[1] * 11.5)+ (frontRotation[1] * 25.0)) != parts[8].getPosition():
-			return False
-		return True
 
 	# Handles Collisions between the ant and the world
 	def collide(self):
@@ -189,3 +225,7 @@ class ant:
 	def run(self, DS):
 		for i in range(0,9):
 			DS.blit(self.parts[i].getImage(), self.parts[i].getPosition())
+
+	# Return an array of all the individual ant parts
+	def getParts(self):
+		return self.parts
