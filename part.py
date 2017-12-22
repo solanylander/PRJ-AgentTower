@@ -42,7 +42,7 @@ class part:
 	def getConstraint(self):
 		return self.constraint
 
-	# Set parts constraint
+	# Set parts weight
 	def setWeight(self, weight):
 		self.weight = weight
 

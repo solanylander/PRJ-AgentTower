@@ -29,13 +29,15 @@ pointerTwo = pygame.image.load("image_resources/pointerTwo.png").convert_alpha()
 
 # Holds the movement values that get inputted into an agent
 movement = [0,0,0,0,0,0,0,0,0]
+gravity = False
 # Add 2 ants into the world
 ants = []
 ants.append(ant())
 for i in range(len(ants)):
-	ants[i].move((150 * i,30), movement)
+	ants[i].move((150 * i,30), movement, gravity)
 	ants[i].addObject((floor_mask, 0, 500))
 	ants[i].addObject((wall_mask, -1000, 300))
+	ants[i].addObject((wall_mask, 1000, 300))
 # main loop
 while True:
 	# Key Listeners for movement and quitting
@@ -52,6 +54,8 @@ while True:
 				movey = -1
 			elif event.key == K_s:
 				movey = 1
+			if event.key == K_p:
+				gravity = True
 			if event.key == K_e:
 				movement[0] = 1
 			if event.key == K_r:
@@ -89,6 +93,8 @@ while True:
 			if event.key == K_m:
 				movement[8] = 1
 		if event.type == KEYUP:
+			if event.key == K_p:
+				gravity = False
 			if event.key == K_e or event.key == K_r:
 				movement[0] = 0
 			if event.key == K_t or event.key == K_y:
@@ -120,10 +126,15 @@ while True:
 	DS.fill(BLUE)
 	DS.blit(floor, (int(0), int(500)))
 	DS.blit(wall, (int(-1000), int(300)))
+	DS.blit(wall, (int(1000), int(300)))
 
 	# Draw ants
 	for i in range(len(ants)):
-		ants[i].move((movex,movey), movement)
+		ants[i].move((movex,movey), movement, gravity)
 		ants[i].run(DS)
+		cog = ants[i].getCog()
+		DS.blit(pointerTwo, (int(cog[0]), int(cog[1])))
+		mark = ants[i].getMarkers()
+		DS.blit(pointer, (int(mark[0][0]), int(mark[0][1])))
 	pygame.display.update()
 	CLOCK.tick(FPS)
