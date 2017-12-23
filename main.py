@@ -34,7 +34,7 @@ gravity = False
 ants = []
 ants.append(ant())
 for i in range(len(ants)):
-	ants[i].move((150 * i,30), movement, gravity)
+	ants[i].move((400,30), movement)
 	ants[i].addObject((floor_mask, 0, 500))
 	ants[i].addObject((wall_mask, -1000, 300))
 	ants[i].addObject((wall_mask, 1000, 300))
@@ -130,11 +130,12 @@ while True:
 
 	# Draw ants
 	for i in range(len(ants)):
-		ants[i].move((movex,movey), movement, gravity)
+		ants[i].move((movex,movey), movement)
 		ants[i].run(DS)
 		cog = ants[i].getCog()
 		DS.blit(pointerTwo, (int(cog[0]), int(cog[1])))
-		mark = ants[i].getMarkers()
-		DS.blit(pointer, (int(mark[0][0]), int(mark[0][1])))
+		markers = ants[i].getMarkers()
+		for j in range(len(markers)):
+			DS.blit(pointer, (int(markers[j][0]), int(markers[j][1])))
 	pygame.display.update()
 	CLOCK.tick(FPS)
