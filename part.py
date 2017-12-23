@@ -12,10 +12,11 @@ class part:
 	    rot_image = rot_image.subsurface(rect).copy()
 	    return rot_image
 
-	# Initialise a body part with a rotation and its position
-	def __init__(self, rotate, x, y):
+	# Initialise a body part with a rotation, position and if it is the main piece (back body segment)
+	def __init__(self, rotate, x, y, main):
 		self.rotate = rotate
 		self.position = (x, y)
+		self.main = main
 
 	# Load an body parts image and save it
 	def loadImage(self, image):
@@ -52,6 +53,14 @@ class part:
 
 	# Rotate the body part by the value of amount with consideration to the body parts constraints
 	def rotation(self, amount):
+		# When the back part is rotated it needs a pivot so the connecting point to the front torso is used
+		distance = (0,0)
+		if self.main and amount != 0:
+			# Find the distance between where the back part is and where it should be after rotating
+			distance = (math.cos(self.rotate / 180 * math.pi) * 39.0, math.sin((self.rotate / 180 * math.pi)) * 39.0)
+			distanceTwo = (math.cos((self.rotate + amount) / 180 * math.pi) * 39.0, math.sin(((self.rotate + amount) / 180 * math.pi)) * 39.0)
+			distance = (distance[0] - distanceTwo[0], distanceTwo[1] - distance[1])
+
 		l, u, r = self.constraint[0], self.constraint[1], self.rotate
 		r = (r + amount) % 360.0
 
@@ -79,6 +88,7 @@ class part:
 		self.rotate = r;
 		self.image = self.rot_image(self.imageload, self.rotate)
 		self.mask = pygame.mask.from_surface(self.image)
+		return distance
 
 	# Set the parts rotation to a specific value. Used in the parts initialisation
 	def setRotation(self, rotation):

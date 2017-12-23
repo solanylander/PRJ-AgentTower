@@ -12,9 +12,9 @@ class ant:
 		backup = self.backup
 		self.locked = [0,0,0,0,0,0,0,0,0]
 		# add the head and body parts
-		parts.append(part(0, 100, 0))
-		parts.append(part(0, 0, 0))
-		parts.append(part(0, 0, 0))
+		parts.append(part(0, 100, 0, True))
+		parts.append(part(0, 0, 0, False))
+		parts.append(part(0, 0, 0, False))
 		# Load the image files
 		parts[0].loadImage("image_resources/body.png")
 		parts[1].loadImage("image_resources/body.png")
@@ -30,12 +30,12 @@ class ant:
 		parts[2].setWeight(8.24)
 
 		# Add the leg parts
-		parts.append(part(310, 0, 0))
-		parts.append(part(50, 0, 0))
-		parts.append(part(50, 0, 0))
-		parts.append(part(0, 0, 0))
-		parts.append(part(0, 0, 0))
-		parts.append(part(0, 0, 0))
+		parts.append(part(310, 0, 0, False))
+		parts.append(part(50, 0, 0, False))
+		parts.append(part(50, 0, 0, False))
+		parts.append(part(0, 0, 0, False))
+		parts.append(part(0, 0, 0, False))
+		parts.append(part(0, 0, 0, False))
 		for i in range(3,6):
 			# Load the image files and set the constraints
 			parts[i].loadImage("image_resources/leg.png")
@@ -48,7 +48,7 @@ class ant:
 
 		# Initialise the backup storage for the parts information with 0 values
 		for j in range(0,9):
-			backup.append(part(0, 0, 0))
+			backup.append(part(0, 0, 0, False))
 			self.colliding.append(False)
 
 		# Backup objects that can be used to revert object overlaps and handle collisions
@@ -79,7 +79,9 @@ class ant:
 			# Store a copy of the agent
 			self.stored(True)
 			# Rotate one body part with the values sent into the function
-			parts[iterate].rotation(movement[iterate])
+			backMove = parts[iterate].rotation(movement[iterate])
+			if iterate == 0:
+				pivot = (pivot[0] + backMove[0], pivot[1] + backMove[1])
 			# If the top part of the leg is moved rotate the bottom as well
 			# The bottom segment can still be rotated seperately
 			if(iterate > 2 and iterate < 6):
@@ -89,6 +91,8 @@ class ant:
 			# If the part collided with the world revert the changes with the copy previously made
 			if self.collide():
 				self.stored(False)
+				if iterate == 0:
+					pivot = (pivot[0] - backMove[0], pivot[1] - backMove[1])
 		# The agent is now affected by gravity
 		pivot = self.gravity(pivot)
 
@@ -170,8 +174,8 @@ class ant:
 
 	# Agent is affected by gravity
 	def gravity(self, pivot):
-		# Decrement twice instead of just lowering by 2 since this way if it collides at 1.7 it will still decrease by 1
-		for i in range(0,2):
+		# Decrement multiple times instead of just lowering once since this way if it collides in the middle it will go as close as possible
+		for i in range(0,3):
 			# Store a copy of the agent
 			self.stored(True)
 			# Lower the agent by 1
@@ -380,4 +384,4 @@ class ant:
 
 	# Retrun any markers that should be drawn on screen
 	def getMarkers(self):
-		return [self.box[1]]
+		return self.box
