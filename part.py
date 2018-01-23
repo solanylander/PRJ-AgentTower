@@ -2,30 +2,41 @@ import math, random, sys, pygame
 from pygame.locals import *
 
 # Individual Ant part (leg, torso, head)
-class part:
+class Part:
 
 	# Rotate image (Only works for square images)
-	def rot_image(self, image, angle):
+	def rotImage(self, image, angle):
 	    rect = image.get_rect()
-	    rot_image = pygame.transform.rotate(image, angle)
-	    rect.center = rot_image.get_rect().center
-	    rot_image = rot_image.subsurface(rect).copy()
-	    return rot_image
+	    rotatedImage = pygame.transform.rotate(image, angle)
+	    rect.center = rotatedImage.get_rect().center
+	    rotatedImage = rotatedImage.subsurface(rect).copy()
+	    return rotatedImage
 
 	# Initialise a body part with a rotation, position and if it is the main piece (back body segment)
 	def __init__(self, rotate, x, y, main):
 		self.rotate = rotate
 		self.position = (x, y)
 		self.main = main
+		self.sensorLoad = []
 
 	# Load an body parts image and save it
 	def loadImage(self, image):
 		# Image unrotated. Saves the program having to repeated call the file the image is saved in
-		self.imageload = pygame.image.load(image).convert_alpha()
+		self.imageLoad = pygame.image.load(image).convert_alpha()
 
 		# Rotate the image and take its mask (Used to calculate collisions)
-		self.image = self.rot_image(self.imageload, self.rotate)
+		self.image = self.rotImage(self.imageLoad, self.rotate)
 		self.mask = pygame.mask.from_surface(self.image)
+
+	# Load an body parts sensors
+	def loadSensors(self, sensors):
+		self.sensorLoad = []
+		self.sensors = []
+		self.sensorsMask = []
+		for i in range(len(sensors)):
+			self.sensorLoad.append(pygame.image.load(sensors[i]).convert_alpha())
+			self.sensors.append(self.rotImage(self.sensorLoad[i], self.rotate))
+			self.sensorsMask.append(pygame.mask.from_surface(self.sensors[i]))
 
 	# Set parts position
 	def setPosition(self, xy):
@@ -77,17 +88,24 @@ class part:
 				r = u
 			else:
 				r = l
-
-		if l < u and (r < l or r > u):
+			distance = (0.0, 0.0)
+		elif l < u and (r < l or r > u):
 			if one > two:
 				r = u
 			else:
 				r = l
+			distance = (0.0, 0.0)
 
 		# Rotate the and get the image mask
 		self.rotate = r;
-		self.image = self.rot_image(self.imageload, self.rotate)
+		self.image = self.rotImage(self.imageLoad, self.rotate)
 		self.mask = pygame.mask.from_surface(self.image)
+		self.sensors = []
+		self.sensorsMask = []
+		# Rotate sensors
+		for i in range(len(self.sensorLoad)):
+			self.sensors.append(self.rotImage(self.sensorLoad[i], self.rotate))
+			self.sensorsMask.append(pygame.mask.from_surface(self.sensors[i]))
 		return distance
 
 	# Set the parts rotation to a specific value. Used in the parts initialisation
@@ -105,3 +123,11 @@ class part:
 	# Get the parts mask
 	def getMask(self):
 		return self.mask
+
+	# Get the sensor images
+	def getSensors(self):
+		return self.sensors
+
+	# Get the sensor masks
+	def getSensorMasks(self):
+		return self.sensorsMask

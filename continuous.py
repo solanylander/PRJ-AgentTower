@@ -1,20 +1,21 @@
-import math, random, sys, pygame, os
+import math, random, sys, pygame
 from pygame.locals import *
-from agent import Agent
-from part import Part
-from block import Block
+from ant import ant
+from part import part
+from block import block
+import os
 
 # define display surface			
 W, H = 1080, 600
 HW, HH = W / 2, H / 2
 AREA = W * H
+movex,movey = 0, 0
 
 # define some colors
 BLUE = (0, 255, 200, 255)
 
-# Place window in the center of the screen
-os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (100,80)
 # initialise display
+os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (100,80)
 pygame.init()
 CLOCK = pygame.time.Clock()
 DS = pygame.display.set_mode((W, H))
@@ -22,27 +23,24 @@ pygame.display.set_caption("Ant Tower Project")
 FPS = 120
 
 # Get the image resources for the world
-pointers = [None, None, None]
-pointers[0] = pygame.image.load("image_resources/pointer.png").convert_alpha()
-pointers[1] = pygame.image.load("image_resources/pointerTwo.png").convert_alpha()
-pointers[2] = pygame.image.load("image_resources/pointerThree.png").convert_alpha()
+pointer = pygame.image.load("image_resources/pointer.png").convert_alpha()
+pointerTwo = pygame.image.load("image_resources/pointerTwo.png").convert_alpha()
 
 # Holds the movement values that get inputted into an agent
 movement = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 player = 4
 blocks = []
 gravity = False
-# Adds agents into the world
-agents = []
-for p in range(0,1):
-	agents.append(Agent((50,-50 + 175 * p)))
-	blocks.append(Block(0, 0, 580 - p * 175))
+# Add 2 ants into the world
+ants = []
+for p in range(0,4):
+	ants.append(ant())
+	blocks.append(block(0, 0, 580 - p * 175))
 	blocks[p].loadImage("image_resources/flat_floor.png")
-# Tell all agents about the objects within the world so they can detect collisions
-for i in range(len(agents)):
-	agents[i].move(movement)
+for i in range(len(ants)):
+	ants[i].move((50,-50 + 175 * i), movement)
 	for j in range(len(blocks)):
-		agents[i].addObject((blocks[j].getMask(), blocks[j].getPosition()[0], blocks[j].getPosition()[1]))
+		ants[i].addObject((blocks[j].getMask(), blocks[j].getPosition()[0], blocks[j].getPosition()[1]))
 # main loop
 while True:
 	# Key Listeners for movement and quitting
@@ -51,15 +49,25 @@ while True:
 			pygame.quit()
 			sys.exit()
 		if event.type == KEYDOWN:
+			if event.key == K_a:
+				movex = -1
+			elif event.key == K_d:
+				movex = 1
+			elif event.key == K_w:
+				movey = -1
+			elif event.key == K_s:
+				movey = 1
 			if event.key == K_1:
 				player = 0
-			if event.key == K_2:
+			elif event.key == K_2:
 				player = 1
-			if event.key == K_3:
+			elif event.key == K_3:
 				player = 2
-			if event.key == K_4:
+			elif event.key == K_4:
 				player = 3
-			if event.key == K_p:
+			elif event.key == K_5:
+				player = 4
+			elif event.key == K_p:
 				gravity = True
 			if event.key == K_q:
 				movement[3] = 1
@@ -125,11 +133,11 @@ while True:
 			if event.key == K_p:
 				gravity = False
 			if event.key == K_q or event.key == K_e:
-				movement[3] = 0
+				movement[3] = movement[3]
 			if event.key == K_r or event.key == K_t:
-				movement[4] = 0
+				movement[4] = movement[4]
 			if event.key == K_y or event.key == K_u:
-				movement[5] = 0
+				movement[5] = movement[5]
 			if event.key == K_i or event.key == K_o:
 				movement[6] = 0
 			if event.key == K_p or event.key == K_LEFTBRACKET:
@@ -143,37 +151,43 @@ while True:
 			if event.key == K_k or event.key == K_l:
 				movement[2] = 0
 			if event.key == K_SEMICOLON or event.key == K_RETURN:
-				movement[9] = 0
+				movement[9] = movement[9]
 			if event.key == K_z or event.key == K_x:
-				movement[10] = 0
+				movement[10] = movement[10]
 			if event.key == K_c or event.key == K_v:
-				movement[11] = 0
+				movement[11] = movement[11]
 			if event.key == K_b or event.key == K_n:
 				movement[12] = 0
 			if event.key == K_m or event.key == K_COMMA:
 				movement[13] = 0
 			if event.key == K_PERIOD or event.key == K_SLASH:
 				movement[14] = 0
+			if event.key == K_a:
+				movex = 0
+			elif event.key == K_d:
+				movex = 0
+			elif event.key == K_w:
+				movey = 0
+			elif event.key == K_s:
+				movey = 0
 
 	# Draw world
 	DS.fill(BLUE)
 	for i in range(len(blocks)):
 		DS.blit(blocks[i].getImage(), blocks[i].getPosition())
-	# Control specific agents
+
 	if player == 4:
-		for j in range(len(agents)):
-			agents[j].move(movement)
+		for j in range(len(ants)):
+			ants[j].move((movex,movey), movement)
 	else:
-		agents[player].move(movement)
-	# Draw agents
-	for i in range(len(agents)):
-		agents[i].run(DS)
-		# Pointer for agents center of gravity
-		cog = agents[i].getCog()
-		DS.blit(pointers[1], (int(cog[0]), int(cog[1])))
-		markers = agents[i].getMarkers()
-		# Pointer for collision points
+		ants[player].move((movex,movey), movement)
+	# Draw ants
+	for i in range(len(ants)):
+		ants[i].run(DS)
+		cog = ants[i].getCog()
+		DS.blit(pointerTwo, (int(cog[0]), int(cog[1])))
+		markers = ants[i].getMarkers()
 		for j in range(len(markers)):
-			DS.blit(pointers[0], (int(markers[j][0]), int(markers[j][1])))
+			DS.blit(pointer, (int(markers[j][0]), int(markers[j][1])))
 	pygame.display.update()
 	CLOCK.tick(FPS)

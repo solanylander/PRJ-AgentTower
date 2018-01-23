@@ -1,7 +1,7 @@
 import math, random, sys, pygame
 from pygame.locals import *
 from part import Part
-from network import network
+from network import Network
 
 class Agent:
 
@@ -10,7 +10,7 @@ class Agent:
 		self.backup = []
 		self.sensors = []
 		self.colliding = []
-		self.network = network()
+		self.network = Network()
 		parts = self.parts
 		backup = self.backup
 		self.locked = [0,0,0,0,0,0,0,0,0]
@@ -34,12 +34,12 @@ class Agent:
 
 		# Add the leg parts
 		for i in range(0, 2):
-			parts.append(part(310, 0, 0, False))
-			parts.append(part(50, 0, 0, False))
-			parts.append(part(50, 0, 0, False))
-			parts.append(part(0, 0, 0, False))
-			parts.append(part(0, 0, 0, False))
-			parts.append(part(0, 0, 0, False))
+			parts.append(Part(310, 0, 0, False))
+			parts.append(Part(50, 0, 0, False))
+			parts.append(Part(50, 0, 0, False))
+			parts.append(Part(0, 0, 0, False))
+			parts.append(Part(0, 0, 0, False))
+			parts.append(Part(0, 0, 0, False))
 		for l in range(3, 15):
 			# Load the image files and set the constraints
 			parts[l].loadImage("image_resources/leg.png")
@@ -52,7 +52,7 @@ class Agent:
 
 		# Initialise the backup storage for the parts information with 0 values
 		for k in range(0,15):
-			backup.append(part(0, 0, 0, False))
+			backup.append(Part(0, 0, 0, False))
 			self.colliding.append(False)
 
 		# Backup objects that can be used to revert object overlaps and handle collisions
@@ -63,6 +63,7 @@ class Agent:
 	# Handles movement calculations
 	def move(self, movement):
 		self.sensorCollide()
+		self.network.input(self.sensorCollisions, )
 		parts = self.parts
 		colliding = self.colliding
 		xy = (0, 0)
@@ -416,6 +417,8 @@ class Agent:
 					if result:
 						collide = 1
 				collisions.append(collide)
+		for j in range(len(parts)):
+				collisions.append(parts[j].getRotation())
 		self.sensorCollisions = collisions
 
 
