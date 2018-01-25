@@ -6,27 +6,34 @@ from network import Network
 class Agent:
 
 	def __init__(self, xy):
-		self.parts = []
-		self.backup = []
 		self.sensors = []
 		self.colliding = []
 		self.network = Network()
-		parts = self.parts
-		backup = self.backup
 		self.locked = [0,0,0,0,0,0,0,0,0]
+		self.cog = (0,0)
+		self.xy = xy
+		self.reset()
+
+		# Initialise the backup storage for the parts information with 0 values
+		self.backup = []
+		for k in range(0,15):
+			self.backup.append(Part(0, 0, 0, False))
+			self.colliding.append(False)
+
+		# Backup objects that can be used to revert object overlaps and handle collisions
+		self.objects = []
+
+	# Reset agent
+	def reset(self):
+		parts = []
 		# add the head and body parts
-		parts.append(Part(0, xy[0], xy[1], True))
+		parts.append(Part(0, self.xy[0], self.xy[1], True))
 		parts.append(Part(0, 0, 0, False))
 		parts.append(Part(0, 0, 0, False))
 		# Load the image files
 		parts[0].loadImage("image_resources/body.png")
 		parts[1].loadImage("image_resources/body.png")
 		parts[2].loadImage("image_resources/head.png")
-		# Set the constraints of the body parts so that the agents cannot fold in on themselves
-		parts[0].setConstraint(((parts[1].getRotation() - 90) % 360, (parts[1].getRotation() + 90) % 360))
-		parts[1].setConstraint(((parts[0].getRotation() - 90) % 360, (parts[0].getRotation() + 90) % 360))
-		parts[2].setConstraint(((parts[1].getRotation() - 90) % 360, (parts[1].getRotation() + 90) % 360))
-
 		# Body parts and heads weight
 		parts[0].setWeight(23.44)
 		parts[1].setWeight(11.72)
@@ -44,26 +51,21 @@ class Agent:
 			# Load the image files and set the constraints
 			parts[l].loadImage("image_resources/leg.png")
 			parts[l].setWeight(0.66)
-			if l % 6 < 3:
-				parts[l].setConstraint(((parts[l].getRotation() - 90) % 360, (parts[l].getRotation() + 90) % 360))
-			else:
-				parts[l].setConstraint((0, 360))
-
-
-		# Initialise the backup storage for the parts information with 0 values
-		for k in range(0,15):
-			backup.append(Part(0, 0, 0, False))
-			self.colliding.append(False)
-
-		# Backup objects that can be used to revert object overlaps and handle collisions
-		self.objects = []
+		self.parts = parts
+		self.centerOfGravity()
 		self.setSensors()
 
-
 	# Handles movement calculations
-	def move(self, movement):
+	def move(self):
+		movement = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 		self.sensorCollide()
-		self.network.input(self.sensorCollisions, )
+		move = self.network.input(self.sensorCollisions)
+		for k in range(len(movement)):
+			if k == move:
+				movement[k] = 1
+			elif k == move - 15:
+				movement[k] = -1
+
 		parts = self.parts
 		colliding = self.colliding
 		xy = (0, 0)
@@ -418,7 +420,7 @@ class Agent:
 						collide = 1
 				collisions.append(collide)
 		for j in range(len(parts)):
-				collisions.append(parts[j].getRotation())
+				collisions.append(parts[j].getRotation() / 360.0)
 		self.sensorCollisions = collisions
 
 
