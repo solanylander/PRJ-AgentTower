@@ -78,7 +78,7 @@ class Network:
 		self.model = self.neuralNetworkModel(input_size = len(X[0]))
 
 		self.model.fit({'input':X}, {'targets':y}, n_epoch=3, snapshot_step=500, show_metric=True, run_id='openaistuff')
-		print(self.model.shape())
+
 	def nextGameCompleted(self, score):
 		self.scores.append(score)
 		self.gameMemory = []

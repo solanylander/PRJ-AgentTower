@@ -58,9 +58,9 @@ class Agent:
 		self.setConstraints()
 		if not init:
 			if stage:
-				self.network.nextGame(score - self.getCog()[0])
+				self.network.nextGame(self.getCog()[0] - score)
 			else:
-				self.network.nextGameCompleted(score - self.getCog()[0])
+				self.network.nextGameCompleted(self.getCog()[0] - score)
 
 	# Handles movement calculations
 	def move(self, stage):

@@ -20,7 +20,7 @@ CLOCK = pygame.time.Clock()
 DS = pygame.display.set_mode((W, H))
 pygame.display.set_caption("Ant Tower Project")
 FPS = 120
-trainingNum = 40
+trainingNum = 50
 
 # Get the image resources for the world
 pointers = [None, None, None]
@@ -40,7 +40,7 @@ for i in range(len(agents)):
 	for j in range(len(blocks)):
 		agents[i].addObject((blocks[j].getMask(), blocks[j].getPosition()[0], blocks[j].getPosition()[1]))
 
-timer = 4000
+timer = 1000
 counter = 0
 # main loop
 while True:
@@ -51,7 +51,7 @@ while True:
 			sys.exit()
 
 	if timer < 0:
-		timer = 4000
+		timer = 1000
 		counter = counter + 1
 		for k in range(len(agents)):
 			score = agents[k].getCog()[0]
