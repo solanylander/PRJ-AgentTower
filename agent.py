@@ -11,8 +11,9 @@ class Agent:
 		self.network = Network()
 		self.locked = [0,0,0,0,0,0,0,0,0]
 		self.cog = (0,0)
+		self.counter = 0
 		self.xy = xy
-		self.reset()
+		self.reset(False, 0, True)
 
 		# Initialise the backup storage for the parts information with 0 values
 		self.backup = []
@@ -24,7 +25,7 @@ class Agent:
 		self.objects = []
 
 	# Reset agent
-	def reset(self):
+	def reset(self, stage, score, init):
 		parts = []
 		# add the head and body parts
 		parts.append(Part(0, self.xy[0], self.xy[1], True))
@@ -54,12 +55,21 @@ class Agent:
 		self.parts = parts
 		self.centerOfGravity()
 		self.setSensors()
+		self.setConstraints()
+		if not init:
+			if stage:
+				self.network.nextGame(score - self.getCog()[0])
+			else:
+				self.network.nextGameCompleted(score - self.getCog()[0])
 
 	# Handles movement calculations
-	def move(self):
+	def move(self, stage):
 		movement = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 		self.sensorCollide()
-		move = self.network.input(self.sensorCollisions)
+		if stage:
+			move = self.network.initialPopulation(self.sensorCollisions)
+		else:
+			move = self.network.completed(self.sensorCollisions)
 		for k in range(len(movement)):
 			if k == move:
 				movement[k] = 1
@@ -404,7 +414,6 @@ class Agent:
 					ret = True
 		return ret
 
-
 	def sensorCollide(self):
 		parts = self.parts
 		objects = self.objects
@@ -418,11 +427,40 @@ class Agent:
 					result = masks[j].overlap(objects[k][0], offset)
 					if result:
 						collide = 1
+
+				if i > 2 and i < 9:
+					for j in range(3,9):
+						# Dont check collisions when the 2 parts are from the same leg. E.g "Thigh" and "Calf"
+						if (i % 3) != (j % 3):			
+							offset = (int(parts[i].getPosition()[0] - parts[j].getPosition()[0]), int(parts[i].getPosition()[1] - parts[j].getPosition()[1]))
+							result = parts[j].getMask().overlap(parts[i].getMask(), offset)
+							# If they collide return true
+							if result:
+								collide = 1
+				elif i > 8:
+					for j in range(9,15):
+						# Dont check collisions when the 2 parts are from the same leg. E.g "Thigh" and "Calf"
+						if (i % 3) != (j % 3):			
+							offset = (int(parts[i].getPosition()[0] - parts[j].getPosition()[0]), int(parts[i].getPosition()[1] - parts[j].getPosition()[1]))
+							result = parts[j].getMask().overlap(parts[i].getMask(), offset)
+							# If they collide return true
+							if result:
+								collide = 1
+
 				collisions.append(collide)
 		for j in range(len(parts)):
 				collisions.append(parts[j].getRotation() / 360.0)
+				one = abs(parts[j].getRotation() - parts[j].getConstraint()[0])
+				two = abs(parts[j].getRotation() - parts[j].getConstraint()[1])
+				if one < 1 or one > 359:
+					collisions.append(1)
+				else:
+					collisions.append(0)
+				if two < 1 or two > 359:
+					collisions.append(1)
+				else:
+					collisions.append(0)
 		self.sensorCollisions = collisions
-
 
 	# Creates a parallelogram around the agent with the corners being the collision points with the highest and lowest x and y values
 	# used for calculating gravity and if the agents center of gravity is over an edge (in which case it will fall)
@@ -478,3 +516,7 @@ class Agent:
 		parts[2].loadSensors(["image_resources/sensors/head1.png", "image_resources/sensors/head2.png", "image_resources/sensors/head3.png", "image_resources/sensors/head4.png","image_resources/sensors/head5.png", "image_resources/sensors/head6.png","image_resources/sensors/head7.png", "image_resources/sensors/head8.png","image_resources/sensors/head9.png", "image_resources/sensors/head10.png","image_resources/sensors/head11.png", "image_resources/sensors/head12.png", "image_resources/sensors/head13.png"])
 		for i in range(3, 15):
 			parts[i].loadSensors(["image_resources/sensors/leg1.png","image_resources/sensors/leg2.png","image_resources/sensors/leg3.png","image_resources/sensors/leg4.png","image_resources/sensors/leg5.png","image_resources/sensors/leg6.png","image_resources/sensors/leg7.png","image_resources/sensors/leg8.png","image_resources/sensors/leg9.png","image_resources/sensors/leg10.png"])
+
+	def nextStep(self):
+		self.network.afterInitial()
+		self.network.trainModel()

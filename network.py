@@ -1,52 +1,91 @@
-import torch
+import gym, random, os, tflearn
+import tensorflow as tf
 import numpy as np
-from torch import autograd, nn, optim
-import torch.nn.functional as F
+from tflearn.layers.core import input_data, dropout, fully_connected
+from tflearn.layers.estimator import regression
+from statistics import mean, median
+from collections import Counter
 
-input_size = 172
-hidden_size = 100
-num_classes = 30
-
-def sigmoid(x):
-	output = 1 / (1 + np.exp(-x))
-	return output
-
-def sigmoidOutputToDerivative(output):
-		return output*(1-output)
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+LR = 1e-3
 
 class Network:
-	# N is batch size; D_in is input dimension;
-	# H is hidden dimension; D_out is output dimension.
 	def __init__(self):
-		#np.random.seed(1)
-		self.W1 = 2 * np.random.random((input_size, hidden_size)) - 1
-		self.W2 = 2 * np.random.random((hidden_size, hidden_size)) - 1
-		self.W3 = 2 * np.random.random((hidden_size, hidden_size)) - 1
-		self.W4 = 2 * np.random.random((hidden_size, hidden_size)) - 1
-		self.W5 = 2 * np.random.random((hidden_size, hidden_size)) - 1
-		self.W6 = 2 * np.random.random((hidden_size, hidden_size)) - 1
-		self.W7 = 2 * np.random.random((hidden_size, hidden_size)) - 1
-		self.W8 = 2 * np.random.random((hidden_size, hidden_size)) - 1
-		self.W9 = 2 * np.random.random((hidden_size, num_classes)) - 1
+		self.trainingData = []
+		self.scores = []
+		self.acceptedScores = []
+		self.gameMemory = []
+		self.prevObs = []
 
-	def input(self, values):
-		inputs = np.array(values)
-		middle = sigmoid(np.dot(inputs, self.W1))
-		middle = sigmoid(np.dot(middle, self.W2))
-		middle = sigmoid(np.dot(middle, self.W3))
-		middle = sigmoid(np.dot(middle, self.W4))
-		middle = sigmoid(np.dot(middle, self.W5))
-		middle = sigmoid(np.dot(middle, self.W6))
-		middle = sigmoid(np.dot(middle, self.W7))
-		middle = sigmoid(np.dot(middle, self.W8))
-		output = sigmoid(np.dot(middle, self.W9))
-		print(output)
-		return np.argmax(output)
 
-	def update(self, gradiant):
-		layer10Delta = gradiant * sigmoidOutputToDerivative(layer10)
-		layer9Error = layer10Delta.dot(self.W9.T)
-		layer9Delta = layer9Error * sigmoidOutputToDerivative(layer9)
+	def initialPopulation(self, observation):
+		observation = np.array(observation)
+		action = random.randrange(0,30)
+		self.gameMemory.append([observation, action])
+		return action
 
-		self.W9 -= layer9.T.dot(layer10Delta)
-		self.W8 -= layer8.T.dot(layer9Delta)
+
+	def nextGame(self, score):
+		if score > 0:
+			self.acceptedScores.append(self.scores)
+		for data in self.gameMemory:
+			output = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+			output[data[1]] = 1
+			self.trainingData.append([data[0], output])
+		self.scores.append(score)
+		self.gameMemory = []
+		self.prevObs = []
+
+	def afterInitial(self):
+		trainingDataSave = np.array(self.trainingData)
+		np.save('saved.npy', trainingDataSave)
+		self.choices = []
+		self.scores = []
+
+
+	def neuralNetworkModel(self, input_size):
+		network = input_data(shape=[None, input_size, 1], name='input')
+
+		network = fully_connected(network, 128, activation='relu')
+		network = dropout(network, 0.8)
+
+
+		network = fully_connected(network, 256, activation='relu')
+		network = dropout(network, 0.8)
+
+
+		network = fully_connected(network, 512, activation='relu')
+		network = dropout(network, 0.8)
+
+
+		network = fully_connected(network, 256, activation='relu')
+		network = dropout(network, 0.8)
+
+
+		network = fully_connected(network, 128, activation='relu')
+		network = dropout(network, 0.8)
+
+		network = fully_connected(network, 30, activation='softmax')
+		network = regression(network, optimizer='adam', learning_rate=LR, loss='categorical_crossentropy', name='targets')
+
+		model = tflearn.DNN(network, tensorboard_dir='log')
+		return model
+
+	def trainModel(self):
+		X = np.array([i[0] for i in self.trainingData]).reshape(-1, len(self.trainingData[0][0]), 1)
+		y = [i[1] for i in self.trainingData]
+
+		self.model = self.neuralNetworkModel(input_size = len(X[0]))
+
+		self.model.fit({'input':X}, {'targets':y}, n_epoch=3, snapshot_step=500, show_metric=True, run_id='openaistuff')
+		print(self.model.shape())
+	def nextGameCompleted(self, score):
+		self.scores.append(score)
+		self.gameMemory = []
+
+	def completed(self, observation):
+		observation = np.array(observation)
+		action = np.argmax(self.model.predict(observation.reshape(-1, len(observation), 1))[0])
+		self.choices.append(action)
+		self.gameMemory.append([observation, action])
+		return action
